@@ -61,17 +61,6 @@ public class AuctionAppServer {
         System.out.println("Client disconnected: " + clientSocket.getInetAddress().getHostAddress());
     }
 
-    private void sendClientData(Socket clientSocket) {
-        try {
-            ObjectOutputStream outputStream = new ObjectOutputStream(clientSocket.getOutputStream());
-
-            outputStream.writeObject(products);
-            outputStream.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     public class Handler implements Runnable {
         private Socket clientSocket;
         private ObjectInputStream inputStream;
@@ -79,15 +68,40 @@ public class AuctionAppServer {
         private static final long HEARTBEAT_INTERVAL = 5000;
 //        private ProductStorage productStorage;
 
-        public Handler(Socket socket) {
+        private class UpdateDataTask extends TimerTask {
+            @Override
+            public void run() {
+                updateData();
+
+                System.out.println("UpdateDataTask func");
+                System.out.println("Klientów: " + connectedClients.size());
+//             Wysłanie zaktualizowanych danych do wszystkich klientów
+                for (Socket client : connectedClients) {
+                    System.out.println("Dane wysłane do: " + client.getInetAddress().getHostAddress());
+                    sendClientData();
+                }
+            }
+        }
+
+        private void sendClientData() {
+            try {
+                outputStream.writeObject(products);
+                outputStream.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public Handler(Socket socket) throws IOException {
             this.clientSocket = socket;
+            outputStream = new ObjectOutputStream(clientSocket.getOutputStream());
             Timer timer = new Timer();
-            timer.schedule(new UpdateDataTask(), 10000, 10000);
+            timer.schedule(new UpdateDataTask(), 5000, 10000);
         }
 
         public void run() {
             try {
-                sendClientData(clientSocket);
+                sendClientData();
                 boolean isConnected = true;
 
                 BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
@@ -165,20 +179,5 @@ public class AuctionAppServer {
         newProducts.put(2, new Product(2,"Product 100", 85.00, 1000.99, "/images/apple-iphone-xs.jpg"));
 
         products = newProducts;
-    }
-
-    private class UpdateDataTask extends TimerTask {
-        @Override
-        public void run() {
-            updateData();
-
-            System.out.println("UpdateDataTask func");
-            System.out.println("Klientów: " + connectedClients.size());
-//             Wysłanie zaktualizowanych danych do wszystkich klientów
-            for (Socket client : connectedClients) {
-                System.out.println("Dane wysłane do: " + client.getInetAddress().getHostAddress());
-//                sendClientData(client);
-            }
-        }
     }
 }
