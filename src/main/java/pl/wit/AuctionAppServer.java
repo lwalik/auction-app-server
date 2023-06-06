@@ -2,6 +2,8 @@ package pl.wit;
 
 import utills.UniqueIdGenerator;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -52,9 +54,6 @@ public class AuctionAppServer {
         this.products.put(3, new Product(3,"Product 3", 15.00, 45.00,  "/images/apple-iphone-xs.jpg"));
     }
 
-//    private static Map<Integer, Product> getProducts() {
-//        return productStorage.getAll();
-//    }
 
     private void removeClient(Socket clientSocket) {
         connectedClients.remove(clientSocket);
@@ -67,6 +66,7 @@ public class AuctionAppServer {
         private ObjectOutputStream outputStream;
         private static final long HEARTBEAT_INTERVAL = 5000;
 //        private ProductStorage productStorage;
+        private BufferedImage image;
 
         private class UpdateDataTask extends TimerTask {
             @Override
@@ -83,18 +83,10 @@ public class AuctionAppServer {
             }
         }
 
-        private void sendClientData() {
-            try {
-                outputStream.writeObject(products);
-                outputStream.flush();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
         public Handler(Socket socket) throws IOException {
             this.clientSocket = socket;
             outputStream = new ObjectOutputStream(clientSocket.getOutputStream());
+//            inputStream = new ObjectInputStream(clientSocket.getInputStream());
             Timer timer = new Timer();
             timer.schedule(new UpdateDataTask(), 5000, 10000);
         }
@@ -108,13 +100,18 @@ public class AuctionAppServer {
                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
 
                 while (isConnected) {
-                    if (reader.ready()) {
+
                         // Odczytanie danych od klienta
                         String receivedData = reader.readLine();
                         // Wykonanie odpowiednich operacji na otrzymanych danych
                         // ...
                         // Przykład warunku wyjścia z pętli
-                    }
+                        if (receivedData == null) {
+                            closeConnection();
+                            isConnected = false;
+                            break;
+                        }
+
 
                     try {
                         int readByte = clientSocket.getInputStream().read();
@@ -129,29 +126,25 @@ public class AuctionAppServer {
                         break;
                     }
                 }
-            } catch (IOException e) {
+            } catch (IOException  e) {
                 // Obsługa błędu we/wy
-                e.printStackTrace();
-            } finally {
-                try {
-                    clientSocket.close();
-                    removeClient(clientSocket);
-                } catch (IOException e) {
-                    // Obsługa błędu przy zamykaniu połączenia
-                    e.printStackTrace();
-                }
+                System.out.println(e);
+            }
+            finally {
+                closeConnection();
+                removeClient(clientSocket);
             }
 
         }
 
 
-        private void sendResponse(Object response) throws IOException {
-            outputStream.writeObject(response);
-            outputStream.flush();
-        }
-
-        private void addProduct(int id, Product product) {
-            products.put(id, product);
+        private void sendClientData() {
+            try {
+                outputStream.writeObject(products);
+                outputStream.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         private void closeConnection() {
@@ -167,8 +160,6 @@ public class AuctionAppServer {
                 e.printStackTrace();
             }
         }
-
-
     }
 
     private void updateData() {
