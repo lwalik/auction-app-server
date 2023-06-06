@@ -1,13 +1,9 @@
 package pl.wit;
 
-import utills.UniqueIdGenerator;
-
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.*;
 
 public class AuctionAppServer {
