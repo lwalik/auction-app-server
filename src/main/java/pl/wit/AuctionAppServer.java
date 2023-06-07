@@ -8,14 +8,15 @@ import java.util.*;
 public class AuctionAppServer {
     private static final int PORT = 9001;
     private static Map<Integer, Product> products;
-    private final Set<Socket> connectedClients = new HashSet<>();
+    private static final HashSet<ObjectOutputStream> writers = new HashSet<ObjectOutputStream>();
+    private static final HashSet<String> names = new HashSet<String>();
 
     public AuctionAppServer() {
         ProductStorage productStorage = new ProductStorage();
         products = productStorage.getAll();
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         AuctionAppServer server = new AuctionAppServer();
         server.start();
     }
@@ -24,14 +25,12 @@ public class AuctionAppServer {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("Server started. Waiting for clients...");
             while (true) {
-                    Socket clientSocket = serverSocket.accept();
-                    connectedClients.add(clientSocket);
-                    System.out.println("New client connected: " + clientSocket.getInetAddress().getHostAddress());
+                Socket clientSocket = serverSocket.accept();
 
-                    // Create a new Handler for each client
-                    Handler handler = new Handler(clientSocket);
-                    Thread clientThread = new Thread(handler);
-                    clientThread.start();
+                // Create a new Handler for each client
+                Handler handler = new Handler(clientSocket);
+                Thread clientThread = new Thread(handler);
+                clientThread.start();
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -39,59 +38,62 @@ public class AuctionAppServer {
 
     }
 
-    private void removeClient(Socket clientSocket) {
-        connectedClients.remove(clientSocket);
-    }
-
-    public class Handler implements Runnable {
+    public static class Handler extends Thread {
         private final Socket clientSocket;
-        private final ObjectOutputStream outputStream;
+        private ObjectOutputStream outputStream;
+        private BufferedReader reader;
+        private String name;
 
-        private class UpdateDataTask extends TimerTask {
-            @Override
-            public void run() {
-                updateData();
-
-                System.out.println("UpdateDataTask func");
-                System.out.println("Klientów: " + connectedClients.size());
-                // Wysłanie zaktualizowanych danych do wszystkich klientów
-                for (Socket client : connectedClients) {
-                    System.out.println("Dane wysłane do: " + client.getInetAddress().getHostAddress());
-                    sendClientData();
-                }
-            }
-        }
 
         public Handler(Socket socket) throws IOException {
             this.clientSocket = socket;
-            outputStream = new ObjectOutputStream(clientSocket.getOutputStream());
-            Timer timer = new Timer();
-            timer.schedule(new UpdateDataTask(), 5000, 10000);
         }
 
         public void run() {
             try {
-                sendClientData();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                outputStream = new ObjectOutputStream(clientSocket.getOutputStream());
+                reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
                 while (true) {
-                        String receivedData = reader.readLine();
-
-                        if (receivedData == null) {
-                            closeConnection();
-                            break;
-                        }
+                    name = reader.readLine();
+                    if (name == null) {
+                        return;
+                    }
+                    synchronized (names) {
+                        name = generateUniqueNameWithRandomId(name);
+                        names.add(name);
+                        break;
+                    }
                 }
-            } catch (IOException  e) {
+
+                System.out.println("New client connected: " + name);
+                writers.add(outputStream);
+                System.out.println("Klientów: " + writers.size());
+                sendClientData();
+
+                while (true) {
+                    String receivedData = reader.readLine();
+                    if (receivedData == null) {
+                        return;
+                    }
+
+                    if (receivedData.startsWith("accepted")) {
+                        updateData();
+                    }
+
+                    for (ObjectOutputStream writer : writers) {
+                        System.out.println("Dane wysłane do: " + clientSocket.getInetAddress().getHostAddress());
+                        writer.writeObject(products);
+                        writer.flush();
+                    }
+
+                }
+            } catch (IOException e) {
                 System.out.println(e);
-            }
-            finally {
+            } finally {
                 closeConnection();
-                removeClient(clientSocket);
             }
-
         }
-
 
         private void sendClientData() {
             try {
@@ -105,14 +107,14 @@ public class AuctionAppServer {
         private void closeConnection() {
             try {
                 if (outputStream != null)
-                    outputStream.close();
+                    writers.remove(outputStream);
                 if (clientSocket != null)
                     clientSocket.close();
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
                 assert clientSocket != null;
-                System.out.println("Klient rozłączony: " + clientSocket.getInetAddress().getHostAddress());
+                System.out.println("Klient rozłączony: " + name);
             }
         }
 
@@ -120,9 +122,19 @@ public class AuctionAppServer {
             Map<Integer, Product> newProducts = new HashMap<>();
 
             newProducts.put(1, new Product(1, "Product 55", 150.00, 500.00, "/images/pobrane.png"));
-            newProducts.put(2, new Product(2,"Product 100", 85.00, 1000.99, "/images/apple-iphone-xs.jpg"));
+            newProducts.put(2, new Product(2, "Product 100", 85.00, 1000.99, "/images/apple-iphone-xs.jpg"));
 
             products = newProducts;
         }
+    }
+
+    public static String generateUniqueNameWithRandomId(String name) {
+        Random random = new Random();
+        String nameWithId;
+        do {
+            nameWithId = name + "#" + (random.nextInt(900) + 100);
+        } while (names.contains(nameWithId));
+
+        return nameWithId;
     }
 }
