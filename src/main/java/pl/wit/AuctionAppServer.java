@@ -80,12 +80,20 @@ public class AuctionAppServer {
 
 
                     if (request.getMethod().equals("POST")) {
+                        Product product = request.getProduct();
+                        product.setCurrBuyer(name);
+                        productStorage.updateData(product);
+                        products = productStorage.getAll();
+
                         if (request.getMessage().equals("BID")) {
-                            Product product = request.getProduct();
-                            product.setCurrBuyer(name);
+                            System.out.println("New offer received.");
                             System.out.println("Updating....");
-                            productStorage.updateData(product);
-                            products = productStorage.getAll();
+                            sendProductToAllWriters(StatusCode.UPDATED);
+                        }
+
+                        if (request.getMessage().equals("BUY_NOW")) {
+                            System.out.println("Product sold");
+                            System.out.println("Updating....");
                             sendProductToAllWriters(StatusCode.UPDATED);
                         }
                     }

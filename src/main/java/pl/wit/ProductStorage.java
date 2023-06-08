@@ -31,15 +31,10 @@ public class ProductStorage {
             Integer key = entry.getKey();
             Product product = entry.getValue();
 
-            System.out.println("1. " + "name: " + product.getName() + " id: " + product.getId() + " currPrice: " + product.getCurrPrice() + " buyNowPrice: " + product.getBuyNowPrice());
-            System.out.println("2. " + "name: " + givenProduct.getName() + " id: " + givenProduct.getId() + " currPrice: " + givenProduct.getCurrPrice() + " buyNowPrice: " + givenProduct.getBuyNowPrice());
-
             if (product.getId() == givenProduct.getId() && givenProduct.getCurrPrice() <= product.getBuyNowPrice()) {
-                System.out.println("Nowy wjeżdża");
                 newProducts.put(key, givenProduct);
             } else {
                 newProducts.put(key, product);
-                System.out.println("Został stary: " + product.getName());
             }
 
         }
