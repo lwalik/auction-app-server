@@ -71,7 +71,7 @@ public class AuctionAppServer {
                 System.out.println("New client connected: " + name);
                 writers.add(outputStream);
                 System.out.println("Number of Clients: " + writers.size());
-                sendProductToWriter(StatusCode.OK, outputStream);
+                sendProductToWriter(StatusCode.OK, outputStream, name);
                 while (true) {
                     Request request = (Request) inputStream.readObject();
                     if (request == null) {
@@ -99,12 +99,13 @@ public class AuctionAppServer {
 
         private void sendProductToAllWriters(StatusCode statusCode) throws IOException {
             for (ObjectOutputStream writer : writers) {
-                sendProductToWriter(statusCode, writer);
+                sendProductToWriter(statusCode, writer, "");
             }
         }
 
-        private void sendProductToWriter(StatusCode statusCode, ObjectOutputStream writer) throws IOException {
-            Response response = new Response(statusCode.getCode(), products);
+        private void sendProductToWriter(StatusCode statusCode, ObjectOutputStream writer, String userName) throws IOException {
+            Response response = new Response(statusCode, products);
+            response.setUserName(userName);
             writer.writeObject(response);
             writer.flush();
         }
