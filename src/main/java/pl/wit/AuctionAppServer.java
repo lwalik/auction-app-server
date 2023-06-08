@@ -70,8 +70,8 @@ public class AuctionAppServer {
 
                 System.out.println("New client connected: " + name);
                 writers.add(outputStream);
-                System.out.println("Klientów: " + writers.size());
-                sendProductToWriters(StatusCode.OK);
+                System.out.println("Number of Clients: " + writers.size());
+                sendProductToWriter(StatusCode.OK, outputStream);
                 while (true) {
                     Request request = (Request) inputStream.readObject();
                     if (request == null) {
@@ -83,11 +83,10 @@ public class AuctionAppServer {
                         if (request.getMessage().equals("BID")) {
                             Product product = request.getProduct();
                             product.setCurrBuyer(name);
-                            System.out.println("Aktualizacja Trwa....");
-                            System.out.println("Nowa cena: " + product.getCurrPrice() + " dla produkty: " + product.getName());
+                            System.out.println("Updating....");
                             productStorage.updateData(product);
                             products = productStorage.getAll();
-                            sendProductToWriters(StatusCode.UPDATED);
+                            sendProductToAllWriters(StatusCode.UPDATED);
                         }
                     }
                 }
@@ -98,13 +97,16 @@ public class AuctionAppServer {
             }
         }
 
-        private void sendProductToWriters(StatusCode statusCode) throws IOException {
+        private void sendProductToAllWriters(StatusCode statusCode) throws IOException {
             for (ObjectOutputStream writer : writers) {
-                Response response = new Response(statusCode.getCode(), products);
-                System.out.println("Dane wysłane do: " + clientSocket.getInetAddress().getHostAddress());
-                writer.writeObject(response);
-                writer.flush();
+                sendProductToWriter(statusCode, writer);
             }
+        }
+
+        private void sendProductToWriter(StatusCode statusCode, ObjectOutputStream writer) throws IOException {
+            Response response = new Response(statusCode.getCode(), products);
+            writer.writeObject(response);
+            writer.flush();
         }
 
         private void closeConnection() {
@@ -117,7 +119,7 @@ public class AuctionAppServer {
                 e.printStackTrace();
             } finally {
                 assert clientSocket != null;
-                System.out.println("Klient rozłączony: " + name);
+                System.out.println("Client disconnected: " + name);
             }
         }
     }
