@@ -3,25 +3,26 @@ package pl.wit;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Random;
 
 public class AuctionAppServer {
     private static final int PORT = 9001;
     private static Map<Integer, Product> products;
     private static final HashSet<ObjectOutputStream> writers = new HashSet<ObjectOutputStream>();
     private static final HashSet<String> names = new HashSet<String>();
+    private static final ProductStorage productStorage = new ProductStorage();
 
-    public AuctionAppServer() {
-        ProductStorage productStorage = new ProductStorage();
-        products = productStorage.getAll();
-    }
 
     public static void main(String[] args) throws Exception {
         AuctionAppServer server = new AuctionAppServer();
         server.start();
+
     }
 
     public void start() {
+        products = productStorage.getAll();
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("Server started. Waiting for clients...");
             while (true) {
@@ -41,9 +42,9 @@ public class AuctionAppServer {
     public static class Handler extends Thread {
         private final Socket clientSocket;
         private ObjectOutputStream outputStream;
+        private ObjectInputStream inputStream;
         private BufferedReader reader;
         private String name;
-
 
         public Handler(Socket socket) throws IOException {
             this.clientSocket = socket;
@@ -52,6 +53,7 @@ public class AuctionAppServer {
         public void run() {
             try {
                 outputStream = new ObjectOutputStream(clientSocket.getOutputStream());
+                inputStream = new ObjectInputStream(clientSocket.getInputStream());
                 reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
                 while (true) {
@@ -69,38 +71,37 @@ public class AuctionAppServer {
                 System.out.println("New client connected: " + name);
                 writers.add(outputStream);
                 System.out.println("Klientów: " + writers.size());
-                sendClientData();
-
+                sendProductToWriters(StatusCode.OK);
                 while (true) {
-                    String receivedData = reader.readLine();
-                    if (receivedData == null) {
+                    Request request = (Request) inputStream.readObject();
+                    if (request == null) {
                         return;
                     }
 
-                    if (receivedData.startsWith("accepted")) {
-                        updateData();
-                    }
 
-                    for (ObjectOutputStream writer : writers) {
-                        System.out.println("Dane wysłane do: " + clientSocket.getInetAddress().getHostAddress());
-                        writer.writeObject(products);
-                        writer.flush();
+                    if (request.getMethod().equals("POST")) {
+                        if (request.getMessage().equals("BID")) {
+                            System.out.println("Aktualizacja Trwa....");
+                            System.out.println("Nowa cena: " + request.getProduct().getCurrPrice() + " dla produkty: " + request.getProduct().getName());
+                            productStorage.updateData(request.getProduct());
+                            products = productStorage.getAll();
+                            sendProductToWriters(StatusCode.UPDATED);
+                        }
                     }
-
                 }
-            } catch (IOException e) {
+            } catch (IOException | ClassNotFoundException e) {
                 System.out.println(e);
             } finally {
                 closeConnection();
             }
         }
 
-        private void sendClientData() {
-            try {
-                outputStream.writeObject(products);
-                outputStream.flush();
-            } catch (IOException e) {
-                e.printStackTrace();
+        private void sendProductToWriters(StatusCode statusCode) throws IOException {
+            for (ObjectOutputStream writer : writers) {
+                Response response = new Response(statusCode.getCode(), products);
+                System.out.println("Dane wysłane do: " + clientSocket.getInetAddress().getHostAddress());
+                writer.writeObject(response);
+                writer.flush();
             }
         }
 
@@ -116,15 +117,6 @@ public class AuctionAppServer {
                 assert clientSocket != null;
                 System.out.println("Klient rozłączony: " + name);
             }
-        }
-
-        private void updateData() {
-            Map<Integer, Product> newProducts = new HashMap<>();
-
-            newProducts.put(1, new Product(1, "Product 55", 150.00, 500.00, "/images/pobrane.png"));
-            newProducts.put(2, new Product(2, "Product 100", 85.00, 1000.99, "/images/apple-iphone-xs.jpg"));
-
-            products = newProducts;
         }
     }
 
