@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Random;
 
 public class ProductStorage {
-    private Map<Integer, Product> products = new HashMap();
+    private Map<Integer, Product> products = new HashMap<>();
     private final HashSet<Integer> ids = new HashSet<>();
 
     public ProductStorage() {

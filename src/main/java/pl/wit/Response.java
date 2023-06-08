@@ -5,8 +5,8 @@ import java.util.Map;
 
 public class Response implements Serializable {
     private static final long serialVersionUID = -1L;
-    private int statusCode;
-    private Map<Integer, Product> products;
+    private final int statusCode;
+    private final Map<Integer, Product> products;
 
     public Response(int statusCode, Map<Integer, Product> products) {
         this.statusCode = statusCode;

@@ -10,12 +10,12 @@ import java.util.Random;
 public class AuctionAppServer {
     private static final int PORT = 9001;
     private static Map<Integer, Product> products;
-    private static final HashSet<ObjectOutputStream> writers = new HashSet<ObjectOutputStream>();
-    private static final HashSet<String> names = new HashSet<String>();
+    private static final HashSet<ObjectOutputStream> writers = new HashSet<>();
+    private static final HashSet<String> names = new HashSet<>();
     private static final ProductStorage productStorage = new ProductStorage();
 
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         AuctionAppServer server = new AuctionAppServer();
         server.start();
 
