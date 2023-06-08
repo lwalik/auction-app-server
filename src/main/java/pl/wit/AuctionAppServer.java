@@ -81,9 +81,11 @@ public class AuctionAppServer {
 
                     if (request.getMethod().equals("POST")) {
                         if (request.getMessage().equals("BID")) {
+                            Product product = request.getProduct();
+                            product.setCurrBuyer(name);
                             System.out.println("Aktualizacja Trwa....");
-                            System.out.println("Nowa cena: " + request.getProduct().getCurrPrice() + " dla produkty: " + request.getProduct().getName());
-                            productStorage.updateData(request.getProduct());
+                            System.out.println("Nowa cena: " + product.getCurrPrice() + " dla produkty: " + product.getName());
+                            productStorage.updateData(product);
                             products = productStorage.getAll();
                             sendProductToWriters(StatusCode.UPDATED);
                         }

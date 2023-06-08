@@ -8,7 +8,7 @@ public class Product implements Serializable {
     private final String name;
     private final double buyNowPrice;
     private final double currPrice;
-    private final String currBuyer;
+    private String currBuyer;
     private final int id;
     private static final long serialVersionUID = -1L;
     private final String imagePath;
@@ -18,7 +18,7 @@ public class Product implements Serializable {
         this.name = name;
         this.currPrice = currPrice;
         this.buyNowPrice = buyNowPrice;
-        this.currBuyer = "Jakiś chuj";
+        this.currBuyer = "";
         this.imagePath = imagePath;
     }
 
@@ -58,5 +58,9 @@ public class Product implements Serializable {
 
     public double getBuyNowPrice() {
         return this.buyNowPrice;
+    }
+
+    public void setCurrBuyer(String currBuyer) {
+        this.currBuyer = currBuyer;
     }
 }
