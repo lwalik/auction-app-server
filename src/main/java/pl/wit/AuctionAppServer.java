@@ -42,8 +42,6 @@ public class AuctionAppServer {
     public static class Handler extends Thread {
         private final Socket clientSocket;
         private ObjectOutputStream outputStream;
-        private ObjectInputStream inputStream;
-        private BufferedReader reader;
         private String name;
 
         public Handler(Socket socket) throws IOException {
@@ -53,8 +51,8 @@ public class AuctionAppServer {
         public void run() {
             try {
                 outputStream = new ObjectOutputStream(clientSocket.getOutputStream());
-                inputStream = new ObjectInputStream(clientSocket.getInputStream());
-                reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                ObjectInputStream inputStream = new ObjectInputStream(clientSocket.getInputStream());
+                BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
                 while (true) {
                     name = reader.readLine();

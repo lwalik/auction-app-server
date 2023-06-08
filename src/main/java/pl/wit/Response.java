@@ -14,19 +14,7 @@ public class Response implements Serializable {
         this.products = products;
     }
 
-    public int getStatusCode() {
-        return statusCode.getCode();
-    }
-
-    public Map<Integer, Product> getProducts() {
-        return products;
-    }
-
     public void setUserName(String name) {
         this.userName = name;
-    }
-
-    public String getUserName() {
-        return this.userName;
     }
 }

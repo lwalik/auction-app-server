@@ -19,12 +19,7 @@ public class ProductStorage {
     public Map<Integer, Product> getAll() {
         return this.products;
     }
-
-    public Map<Integer, Product> removeProduct(int id) {
-        this.products.remove(id);
-        return products;
-    }
-
+    
     public void updateData(Product givenProduct) {
         Map<Integer, Product> newProducts = new HashMap<>();
         for (Map.Entry<Integer, Product> entry : products.entrySet()) {
