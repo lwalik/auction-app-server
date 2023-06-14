@@ -18,7 +18,6 @@ public class AuctionAppServer {
     public static void main(String[] args) {
         AuctionAppServer server = new AuctionAppServer();
         server.start();
-
     }
 
     public void start() {
@@ -125,7 +124,6 @@ public class AuctionAppServer {
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
-                assert clientSocket != null;
                 System.out.println("Client disconnected: " + name);
             }
         }
